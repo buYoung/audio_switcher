@@ -1,2 +1,20 @@
 
 build/
+.idea/
+/dist/artifacts.json
+/dist/audio_switcher_windows_386/audio_switcher.exe
+/dist/audio_switcher_windows_amd64_v1/audio_switcher.exe
+/dist/audio_switcher_windows_arm64/audio_switcher.exe
+
+/dist/audio_switcher_0.0.0-SNAPSHOT-ebd4a10_checksums.txt
+/dist/audio_switcher_Windows_arm64.zip
+/dist/audio_switcher_Windows_i386.zip
+/dist/audio_switcher_Windows_x86_64.zip
+
+/tmp/build-errors.log
+/dist/config.yaml
+/go.sum
+/tmp/main.exe
+/main.exe
+/dist/metadata.json
+/selectedDevice.json
