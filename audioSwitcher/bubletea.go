@@ -113,14 +113,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			atoi, err := strconv.Atoi(keypress)
 			if err == nil {
-				device, find := lo.Find(deviceList, func(device map[string]interface{}) bool {
-					return device["Index"].(int) == atoi
-				})
-				if find {
-					m.choice = ChoiceDevice{
-						Index: device["Index"].(int),
-						Name:  strings.ReplaceAll(device["Name"].(string), " (현재 사용중)", ""),
-					}
+				device := deviceList[atoi-1]
+				m.choice = ChoiceDevice{
+					Index: device["Index"].(int),
+					Name:  strings.ReplaceAll(device["Name"].(string), " (현재 사용중)", ""),
 				}
 				return m, nil
 			}
