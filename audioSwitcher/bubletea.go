@@ -6,6 +6,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +16,15 @@ import (
 )
 
 const listHeight = 14
+
+var (
+	isSelected = new(atomic.Bool)
+	mutex      = new(sync.Mutex)
+)
+
+func init() {
+	isSelected.Store(false)
+}
 
 var (
 	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
@@ -67,6 +78,12 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if isSelected.Load() {
+		return m, tea.Quit
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
@@ -89,7 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.choice = ChoiceDevice{
 					Index: selectDevice["Index"].(int),
-					Name:  selectDevice["Name"].(string),
+					Name:  strings.ReplaceAll(selectDevice["Name"].(string), " (현재 사용중)", ""),
 				}
 			}
 			return m, tea.Quit
@@ -102,7 +119,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if find {
 					m.choice = ChoiceDevice{
 						Index: device["Index"].(int),
-						Name:  device["Name"].(string),
+						Name:  strings.ReplaceAll(device["Name"].(string), " (현재 사용중)", ""),
 					}
 				}
 				return m, nil
@@ -116,19 +133,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if isSelected.Load() {
+		return quitTextStyle.Render(fmt.Sprintf("%s 으로 변경이 완료 되었습니다", m.choice.Name))
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	fmt.Printf("choice : %v %v", m.choice.Name, isSelected.Load())
+
 	if m.choice.Name != "" {
 		err := SetPlaybackDevices(m.choice.Index)
 		if err != nil {
 			return quitTextStyle.Render(fmt.Sprintf("%s 으로 변경 실패", m.choice.Name))
 		}
-		SelectedDeviceData = append(SelectedDeviceData, SelectedDevice{
-			Name:  m.choice.Name,
-			Count: 1,
+
+		_, index, find := lo.FindIndexOf(SelectedDeviceData, func(device SelectedDevice) bool {
+			return device.Name == m.choice.Name
 		})
 
+		if find {
+			SelectedDeviceData[index].Count++
+		} else {
+			SelectedDeviceData = append(SelectedDeviceData, SelectedDevice{
+				Name:  m.choice.Name,
+				Count: 1,
+			})
+		}
+		isSelected.Store(true)
 		err = saveData()
 		if err != nil {
-			log.Fatalln("설정 저장 실패")
+			log.Fatalln("설정 저장 실패", err)
 		}
 		return quitTextStyle.Render(fmt.Sprintf("%s 으로 변경이 완료 되었습니다", m.choice.Name))
 	}

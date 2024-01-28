@@ -33,7 +33,7 @@ func InitAudioSwitcher() {
 	}
 	deviceList = GetPlaybackDevices()
 
-	getDeviceIndexAndName := lo.Map(deviceList, func(device map[string]interface{}, _ int) map[string]interface{} {
+	deviceList = lo.Map(deviceList, func(device map[string]interface{}, _ int) map[string]interface{} {
 		isDefault := device["Default1"].(bool)
 		index := device["Index"].(int)
 		name := device["Name"].(string)
@@ -47,12 +47,12 @@ func InitAudioSwitcher() {
 		}
 	})
 
-	sort.Slice(getDeviceIndexAndName, func(i, j int) bool {
+	sort.Slice(deviceList, func(i, j int) bool {
 		deviceA, findA := lo.Find(SelectedDeviceData, func(device SelectedDevice) bool {
-			return device.Name == strings.ReplaceAll(getDeviceIndexAndName[i]["Name"].(string), " (현재 사용중)", "")
+			return device.Name == strings.ReplaceAll(deviceList[i]["Name"].(string), " (현재 사용중)", "")
 		})
 		deviceB, findB := lo.Find(SelectedDeviceData, func(device SelectedDevice) bool {
-			return device.Name == strings.ReplaceAll(getDeviceIndexAndName[j]["Name"].(string), " (현재 사용중)", "")
+			return device.Name == strings.ReplaceAll(deviceList[j]["Name"].(string), " (현재 사용중)", "")
 		})
 
 		if findA && findB {
@@ -65,11 +65,11 @@ func InitAudioSwitcher() {
 			return false
 		}
 
-		return getDeviceIndexAndName[i]["Index"].(int) < getDeviceIndexAndName[j]["Index"].(int)
+		return deviceList[i]["Index"].(int) < deviceList[j]["Index"].(int)
 	})
 
 	var items []list.Item
-	for _, q := range getDeviceIndexAndName {
+	for _, q := range deviceList {
 		items = append(items, item(q["Name"].(string)))
 	}
 

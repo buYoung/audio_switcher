@@ -3,12 +3,8 @@ package audioSwitcher
 import (
 	"encoding/json"
 	"os"
+	"strings"
 )
-
-type SelectedDevice struct {
-	Name  string
-	Count int
-}
 
 func loadData() error {
 	_, err := os.Stat("selectedDevice.json")
@@ -35,7 +31,11 @@ func loadData() error {
 }
 
 func saveData() error {
-	data, err := json.Marshal(SelectedDeviceData)
+	for i := range SelectedDeviceData {
+		SelectedDeviceData[i].Name = strings.ReplaceAll(SelectedDeviceData[i].Name, " (현재 사용중)", "")
+	}
+
+	data, err := json.MarshalIndent(SelectedDeviceData, "", "  ")
 	if err != nil {
 		return err
 	}
